@@ -11,7 +11,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import PhoneOTP, User
+from .models import PhoneOTP, User, Wallet, Transaction
 from .serializers import (
     LoginSerializer,
     SignupSerializer,
@@ -201,3 +201,25 @@ class PreviousOrderList(APIView):
         if not response:
             return Response({"message": "No Previous order found", "success": True}, status_code=status.HTTP_200_OK)
         return Response({"message": response, "success": True}, status_code=status.HTTP_200_OK)
+    
+def view_wallet(request):
+    user = request.user
+    try:
+        # Fetch the wallet and transactions for the logged-in user
+        wallet = Wallet.objects.get(user=user)
+        transactions = Transaction.objects.filter(user=user).order_by('-created_at')
+    except Wallet.DoesNotExist:
+        wallet = None  # Or handle this case appropriately
+        transactions = []
+    except Exception as e:
+        # Log the exception or handle it as needed
+        print(f"An error occurred: {e}")
+        wallet = None
+        transactions = []
+
+    context = {
+        'wallet': wallet,
+        'transactions': transactions
+    }
+     
+    return Response({"message": "Logout success", "success":True}, status=status.HTTP_200_OK)

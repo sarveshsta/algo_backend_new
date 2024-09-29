@@ -39,12 +39,29 @@ class PhoneOTP(Timestamps):
     otp = models.CharField(max_length=10, null=True, blank=True)
     is_verified = models.BooleanField(default=False)
 
-# Create your models here.
+
+
 class Wallet(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, verbose_name='User-Wallet', blank=True, 
-                            related_name='user_wallet', on_delete=models.CASCADE)
-    amount = models.IntegerField(default=0)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    def __str__(self):
+        return f"{self.user}'s Wallet"
+
+
+class Transaction(models.Model):
+    TRANSACTION_TYPES = (
+        ('credit', 'Credit'),
+        ('debit', 'Debit'),
+    )
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.transaction_type} - ₹{self.amount}"
 
 
 class Strategy(models.Model):
@@ -104,3 +121,5 @@ class UserOrders(models.Model):
     class Meta:
         verbose_name = 'UserOrder'
         verbose_name_plural = 'UserOrders'
+
+
