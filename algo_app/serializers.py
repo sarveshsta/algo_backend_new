@@ -1,6 +1,5 @@
+from.models import User
 from rest_framework import serializers
-
-
 
 class StrategySerializer(serializers.Serializer):
     strategy_id = serializers.CharField()
@@ -25,3 +24,15 @@ class SignupSerializer(serializers.Serializer):
 class SignupSerializer(serializers.Serializer):
     password = serializers.CharField()
     phone = serializers.IntegerField()
+
+
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id","name", "email", "phone", "is_active", "created_at", "updated_at", "last_login", "is_superuser"]
+
+
+class UpdateUserStatusSerializer(serializers.Serializer):
+    is_active = serializers.BooleanField()
