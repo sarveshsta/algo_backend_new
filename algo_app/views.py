@@ -36,7 +36,7 @@ class RequestOTP(APIView):
                 # send_otp(otp, phone)
                 return Response(response(True, {"otp": 123456}, "OTP sent"), status=status.HTTP_200_OK)
 
-            # send_otp(otp, phone)
+            send_otp(otp, phone)
             
             phoneOTP_obj, create_status = PhoneOTP.objects.get_or_create(phone=phone)
             phoneOTP_obj.otp = otp
@@ -276,7 +276,7 @@ class index_expiry(APIView):
     def get(self, request, index, *args, **kwargs):
         try:
             data = get_index_expiry(index)
-            return Response(response(True, data, "Data retrieved successfully"), status=status.HTTP_200_OK)
+            return Response(response(True, data.get('data'), "Data retrieved successfully"), status=status.HTTP_200_OK)
         except Exception as e:
             print("Error---->", str(e))
             return Response(response(False, message="Something went wrong", error=str(e)),status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -287,7 +287,7 @@ class index_strike_price(APIView):
     def get(self, request, index, expiry, *args, **kwargs):
         try:
             data = get_index_strike_price(index, expiry)
-            return Response(response(True, data, "Data retrieved successfully"), status=status.HTTP_200_OK)
+            return Response(response(True, data.get('data'), "Data retrieved successfully"), status=status.HTTP_200_OK)
         except Exception as e:
             print("Error---->", str(e))
             return Response(response(False, message="Something went wrong", error=str(e)),status=status.HTTP_500_INTERNAL_SERVER_ERROR)
