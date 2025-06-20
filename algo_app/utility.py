@@ -1,3 +1,4 @@
+from xml.etree.ElementTree import TreeBuilder
 import requests
 from django.conf import settings
 from algo_app.models import User,AngelOneCredential
@@ -35,7 +36,7 @@ def connect_account(dict, user_id):
     response = requests.post(url=url, json=body)
     res_data = response.json()
 
-    if res_data.get("status") == "success":
+    if res_data.get("success") == True:
         user = User.objects.get(id=user_id)
 
         AngelOneCredential.objects.create(
