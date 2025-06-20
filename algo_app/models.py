@@ -1,9 +1,31 @@
-from django.db import models
 import uuid
+from django.db import models
+from django.contrib.auth.models import (AbstractBaseUser, AbstractUser, Group,Permission, PermissionsMixin)
+from django.contrib.auth.base_user import BaseUserManager
+from django.utils import timezone
+class UserManager(BaseUserManager):
+    def create_user(self, phone, email, name, password=None, **extra_fields):
+        if not phone:
+            raise ValueError("The Phone number must be set")
+        email = self.normalize_email(email)
+        user = self.model(phone=phone, email=email, name=name, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
 
-from django.contrib.auth.models import (AbstractBaseUser, AbstractUser, Group,
-                                        Permission, PermissionsMixin)
+    def create_superuser(self, phone, email, name, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
 
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self.create_user(phone, email, name, password, **extra_fields)
+
+    def get_by_natural_key(self, phone):
+        return self.get(phone=phone)
 class Timestamps(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -21,21 +43,25 @@ class User(AbstractBaseUser, PermissionsMixin, Timestamps):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
-    
+
     USERNAME_FIELD = 'phone'
-    REQUIRED_FIELDS = ['phone', 'email', 'name']
+    REQUIRED_FIELDS = ['email', 'name']
+
+    objects = UserManager()  # <-- Set custom manager here
+
     def __str__(self):
         if self.phone:
             return self.phone
         elif self.email:
             return self.email
         return f"{self.name} - {self.phone} - {self.email}"
-    
+
     groups = models.ManyToManyField(Group, verbose_name='groups', blank=True, related_name='custom_user_set')
     user_permissions = models.ManyToManyField(Permission, verbose_name='user permissions', blank=True, related_name='custom_user_set')
 
+
 class PhoneOTP(Timestamps):
-    phone = models.IntegerField(null=False, blank=False, unique=True, default="", db_index=True)
+    phone = models.CharField(max_length=50, null=False, blank=False, unique=True, default="", db_index=True)
     otp = models.CharField(max_length=10, null=True, blank=True)
     is_verified = models.BooleanField(default=False)
 
@@ -123,3 +149,51 @@ class UserOrders(models.Model):
         verbose_name_plural = 'UserOrders'
 
 
+class AngelOneCredential(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='angelone_credentials')
+    client_code = models.CharField(max_length=50)
+    password = models.TextField()  # Encrypted
+    totp_secret = models.TextField()  # Encrypted
+    jwt_token = models.TextField(blank=True, null=True)
+    feed_token = models.TextField(blank=True, null=True)
+    token_expiry = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"AngelOne - {self.client_code} ({self.user.username})"
+
+
+
+class Token(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    token = models.CharField(max_length=255, unique=True)
+    symbol = models.CharField(max_length=255, db_index=True)
+    name = models.CharField(max_length=255)
+    expiry_date = models.DateField(db_index=True)
+    strike = models.CharField(max_length=255)
+    lotsize = models.CharField(max_length=255)
+    instrumenttype = models.CharField(max_length=255)
+    exch_seg = models.CharField(max_length=255)
+    tick_size = models.CharField(max_length=255)
+
+
+
+class TradeDetails(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_id = models.CharField(max_length=255, db_index=True)
+    signal = models.CharField(max_length=255)
+    price = models.FloatField()
+    trade_time = models.DateTimeField(default=timezone.now)
+
+    token = models.ForeignKey(
+        Token,
+        verbose_name='Trade Details',
+        blank=True,
+        related_name='trade_details',  
+        on_delete=models.CASCADE
+    )
+
+    def __str__(self):
+        return f"Trade {self.id} - User {self.user_id} - Token {self.token.token}"
