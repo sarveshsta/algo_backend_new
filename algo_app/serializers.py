@@ -25,6 +25,12 @@ class SignupSerializer(serializers.Serializer):
     password = serializers.CharField()
     phone = serializers.IntegerField()
 
+class RegisterSerializer(serializers.Serializer):
+    phone = serializers.IntegerField()
+    name = serializers.CharField(max_length=50)
+    email = serializers.EmailField()
+    password = serializers.CharField(max_length=30)
+
 
 
 
@@ -36,3 +42,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UpdateUserStatusSerializer(serializers.Serializer):
     is_active = serializers.BooleanField()
+
+class UserInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "phone", "name", "username", "email"]

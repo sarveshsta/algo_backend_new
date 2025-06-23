@@ -7,10 +7,12 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.hashers import check_password
 from .serializers import (
     LoginSerializer,
+    RegisterSerializer,
     SignupSerializer,
     UserSerializer,
     UpdateUserStatusSerializer,
-    StrategySerializer
+    StrategySerializer,
+    UserInfoSerializer
 )
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -18,53 +20,157 @@ from rest_framework import generics, filters, status
 from .models import PhoneOTP, User, Wallet, Transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .utils import send_otp, create_token_for_user, response,CustomPagination
+from .utils import send_email, send_otp, create_token_for_user, response,CustomPagination
 from .utility import start_strategy, stop_strategy, connect_account, get_tokens, trade_details, get_index_expiry, get_index_strike_price
 
-
-class RequestOTP(APIView):
+class RequestEmailOTP(APIView):
     def post(self, request):
         data = self.request.data
-        phone = data['phone']
+        email = data['email']
         try:
             otp = random.randint(100000, 999999)
-            if str(phone) == "9630152559":
-                phoneOTP_obj, create_status = PhoneOTP.objects.get_or_create(phone=phone)
-                phoneOTP_obj.otp = 123456
-                print("OTP", 123456)
-                phoneOTP_obj.save()
-                # send_otp(otp, phone)
-                return Response(response(True, {"otp": 123456}, "OTP sent"), status=status.HTTP_200_OK)
-
-            send_otp(otp, phone)
+            send_email(
+                subject='Welcome to AlgoToday',
+                recipients=[email],
+                template_name='verification_email.html',
+                context={'verification_code': otp}
+            )
             
-            phoneOTP_obj, create_status = PhoneOTP.objects.get_or_create(phone=phone)
-            phoneOTP_obj.otp = otp
+            user, create_status = User.objects.get_or_create(email=email)
+            user.verification_code = otp
             print("OTP", otp)
-            phoneOTP_obj.save()
+            user.save()
             
             return Response(response(True, {"otp": otp}, "OTP sent"), status=status.HTTP_200_OK)
         except Exception as e:
             print(e)
             return Response(response(message="somthing went wrong", error=str(e)), status=status.HTTP_400_BAD_REQUEST)
-
-
-class VerifyOTP(APIView):
+        
+class VerifyEmailOTP(APIView):
     def post(self, request):
-        data = self.request.data
-        phone = data['phone']
-        otp = data['otp']
+        data = request.data
+        email = data.get('email')
+        verification_code = data.get('otp')
 
         try:
-            phoneotp_obj = PhoneOTP.objects.get(phone=phone, otp=otp)
-            phoneotp_obj.is_verified = True
-            phoneotp_obj.save()
-            return Response(response(True, message ="OTP Verified"), status=status.HTTP_200_OK)
-        except PhoneOTP.DoesNotExist:
-            return Response(response(message ="Invalid OTP"), status=status.HTTP_400_BAD_REQUEST)
+            user = User.objects.get(email=email, verification_code=verification_code)
+            user.is_email_verified = True
+            user.save()
+            return Response(response(True, message="OTP Verified"), status=status.HTTP_200_OK)
+        
+        except User.DoesNotExist:
+            return Response(response(message="Invalid OTP"), status=status.HTTP_400_BAD_REQUEST)
+        
         except Exception as e:
-            print(e)
-            return Response(response(message="somthing went wrong", error=str(e)), status=status.HTTP_400_BAD_REQUEST)
+            print("Error:", str(e))
+            return Response(response(message="Something went wrong", error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class Register(APIView):
+    serializer_class = RegisterSerializer
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+
+        if not serializer.is_valid():
+            print(serializer.errors)
+            return Response(response(message=str(serializer.errors)), status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            email = data.get('email')
+            phone = data.get('phone')
+            name = data.get('name')
+            password = data.get('password')
+
+            user = User.objects.filter(email=email).first()
+            if not user:
+                return Response(response(message="Email does not exist or is not pre-registered"), status=status.HTTP_400_BAD_REQUEST)
+
+            if not user.is_email_verified:
+                return Response(response(message="Email is not verified"), status=status.HTTP_400_BAD_REQUEST)
+
+            user.phone = phone
+            user.set_password(password)
+            user.name = name
+            user.save()
+
+            tokens = create_token_for_user(user)
+            return Response(response(True, tokens, message="Signup successful"), status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            print("Error ---->", str(e))
+            return Response(response(message="Something went wrong", error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class UserInfo(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        try:
+            print(request.user)
+            user = User.objects.get(id=request.user.id)
+            if not user:
+                return Response(response(error="user not found"), status=status.HTTP_400_BAD_REQUEST)
+            phone = PhoneOTP.objects.get(phone = user.phone)
+            if not phone:
+                return Response(response(error="phone number not found"), status=status.HTTP_400_BAD_REQUEST)
+            email_verified = user.is_email_verified if user else False
+            phone_verified = phone.is_verified if phone else False
+
+            # Serialize user
+            serializer = UserInfoSerializer(user)
+            user_data = serializer.data
+            user_data['phone_verified'] = phone_verified  
+            user_data['email_verified'] = email_verified 
+            return Response(response(True, user_data, message="User info retrieved successfully"), status=status.HTTP_200_OK)
+        except Exception as e:
+            print("Error ---->", str(e))
+            return Response(response(False, message="Something went wrong", error=str(e)), status=status.HTTP_400_BAD_REQUEST)
+           
+class RequestPhoneOTP(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        phone = data.get('phone')
+
+        if not phone:
+            return Response(response(message="Phone number is required"), status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(id=request.user.id)
+            user.phone = phone
+            user.save()
+            PhoneOTP.objects.filter(phone=phone).delete()
+            otp = random.randint(100000, 999999)
+            PhoneOTP.objects.create(phone=phone, otp=otp)
+            send_otp(otp, phone)
+            return Response(response(True, {"otp": otp}, message="OTP sent successfully"), status=status.HTTP_200_OK)
+
+        except User.DoesNotExist:
+            return Response(response(False, message="User not found"), status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            print("Error ---->", str(e))
+            return Response(response(False, message="Something went wrong", error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class VerifyPhoneOTP(APIView):
+    def post(self, request):
+        data = request.data
+        phone = data.get('phone')
+        otp = data.get('otp')
+
+        if not phone or not otp:
+            return Response(response(False, message="Phone and OTP are required"), status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            phone_otp = PhoneOTP.objects.filter(phone=phone, otp=otp).first()
+            phone_otp.is_verified = True
+            phone_otp.save()
+            return Response(response(True, message="Phone verified successfully"), status=status.HTTP_200_OK)
+        except PhoneOTP.DoesNotExist:
+            return Response(response(False, message="Invalid otp"), status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print("Error---->", str(e))
+            return Response(response(False, message="Something went wrong", error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class UserLogin(APIView):
@@ -133,7 +239,9 @@ class UserSignup(APIView):
         except Exception as e:
             print("Error---->", str(e))
             return Response(response(message="somthing went wrong", error=str(e)), status=status.HTTP_400_BAD_REQUEST)
-        
+
+
+     
 
 class ForgotPassword(APIView):
     serialzer_class = LoginSerializer

@@ -35,11 +35,12 @@ class Timestamps(models.Model):
 
 class User(AbstractBaseUser, PermissionsMixin, Timestamps):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=50, null=False, blank=False, default="")
-    phone = models.CharField(max_length=50, null=False, blank=False, unique=True, default="", db_index=True)
+    name = models.CharField(max_length=50, null=True, blank=False, default="")
+    phone = models.CharField(max_length=50, null=True, blank=False, unique=True, default="", db_index=True)
     email = models.EmailField(null=False, blank=False, unique=True, default="")
     username = models.CharField(null=True, blank=True, default=None, max_length=20)
-
+    verification_code = models.CharField(max_length=10, null=True, blank=True)
+    is_email_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
