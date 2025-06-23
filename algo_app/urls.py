@@ -1,8 +1,7 @@
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.urls import path
 from .views import (
-    RequestOTP,
-    VerifyOTP,
+    RequestPhoneOTP,
     UserSignup,
     UserLogin,
     UserLogout,
@@ -18,14 +17,28 @@ from .views import (
     index_strike_price,
     ListUserAPIView,
     UpdateUserStatusAPIView,
+    UserInfo,
+    RequestEmailOTP,
+    VerifyEmailOTP,
+    Register,
+    VerifyPhoneOTP
 
 )
 
 urlpatterns = [
-    path('request-otp/', RequestOTP.as_view()),
-    path('verify-otp/', VerifyOTP.as_view()),
-    path('signup/', UserSignup.as_view()),
+    #new onbording flow APIs
+    path('request-email-otp/', RequestEmailOTP.as_view()),
+    path('verify-email-otp/', VerifyEmailOTP.as_view()),
+    path('register/', Register.as_view()),
+
+    #verfy phone APIs
+    path('user-info/', UserInfo.as_view()),
+    path('request-phone-otp/', RequestPhoneOTP.as_view()),
+    path('verify-phone-otp/',  VerifyPhoneOTP.as_view()),
+
+
     path('login/', UserLogin.as_view()),
+    path('signup/', UserSignup.as_view()), 
     path('update-password/', ForgotPassword.as_view()),
     path('logout/', UserLogout.as_view()),
     path('start/', RunStrategy.as_view(), name="start"),

@@ -13,14 +13,19 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework import serializers
 
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.conf import settings
+
 #SEND VERIFICATION
+
 def send_otp(otp, to_number):
     client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
     client.messages.create(
             body = f'Greetings, your OTP for Algo-Today is {otp}. Please do not share it with anyone.',
-            from_= '+12136529736',
-            to = '+91' + str(to_number)
+            from_= '+12034634291',
+            to = '+918839003067'
         )
 
 
@@ -97,9 +102,6 @@ def decrypt_encrypted_token(encrypted_token: str):
 
 
 # pagination.py or utils.py
-
-
-
 class CustomPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
@@ -116,3 +118,26 @@ class CustomPagination(PageNumberPagination):
             }
         })
 
+
+
+def send_email(subject, recipients, template_name, context):
+    """
+    General function to send HTML emails using Django.
+
+    :param subject: Subject of the email
+    :param recipients: List of recipient email addresses
+    :param template_name: Name of the HTML template (relative to templates dir)
+    :param context: Dictionary with template variables
+    :return: True if sent, False otherwise
+    """
+    try:
+        html_body = render_to_string(template_name, context)
+        from_email = settings.DEFAULT_FROM_EMAIL  # Make sure this is set
+
+        msg = EmailMultiAlternatives(subject, '', from_email, recipients)
+        msg.attach_alternative(html_body, "text/html")
+        msg.send()
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
