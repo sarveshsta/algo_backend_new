@@ -10,8 +10,7 @@ class StrategySerializer(serializers.Serializer):
     chart_time = serializers.CharField()
     
 class LoginSerializer(serializers.Serializer):
-    phone = serializers.IntegerField()
-    otp = serializers.IntegerField()
+    email = serializers.CharField()
     password = serializers.CharField(max_length=30)
     
 class SignupSerializer(serializers.Serializer):

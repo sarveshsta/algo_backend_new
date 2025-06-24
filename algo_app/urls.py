@@ -2,8 +2,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.urls import path
 from .views import (
     RequestPhoneOTP,
-    UserSignup,
-    UserLogin,
+    Login,
     UserLogout,
     ForgotPassword,
     RunStrategy,
@@ -30,6 +29,7 @@ urlpatterns = [
     path('request-email-otp/', RequestEmailOTP.as_view()),
     path('verify-email-otp/', VerifyEmailOTP.as_view()),
     path('register/', Register.as_view()),
+    path('login/', Login.as_view()),
 
     #verfy phone APIs
     path('user-info/', UserInfo.as_view()),
@@ -37,8 +37,7 @@ urlpatterns = [
     path('verify-phone-otp/',  VerifyPhoneOTP.as_view()),
 
 
-    path('login/', UserLogin.as_view()),
-    path('signup/', UserSignup.as_view()), 
+  
     path('update-password/', ForgotPassword.as_view()),
     path('logout/', UserLogout.as_view()),
     path('start/', RunStrategy.as_view(), name="start"),
