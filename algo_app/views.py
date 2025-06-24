@@ -1,3 +1,4 @@
+import email
 import random
 from django.db.models import Q
 from rest_framework import status
@@ -142,7 +143,7 @@ class RequestPhoneOTP(APIView):
             PhoneOTP.objects.filter(phone=phone).delete()
             otp = random.randint(100000, 999999)
             PhoneOTP.objects.create(phone=phone, otp=otp)
-            send_otp(otp, phone)
+            # send_otp(otp, phone)
             return Response(response(True, {"otp": otp}, message="OTP sent successfully"), status=status.HTTP_200_OK)
 
         except User.DoesNotExist:
@@ -153,6 +154,7 @@ class RequestPhoneOTP(APIView):
             return Response(response(False, message="Something went wrong", error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class VerifyPhoneOTP(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         data = request.data
         phone = data.get('phone')
@@ -173,78 +175,37 @@ class VerifyPhoneOTP(APIView):
             return Response(response(False, message="Something went wrong", error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class UserLogin(APIView):
-    serialzer_class = LoginSerializer
+class Login(APIView):
+    serializer_class = LoginSerializer
+
     def post(self, request):
-        data = self.request.data
-        serializer = self.serialzer_class(data=data)
-
-        if not serializer.is_valid():
-            return Response(response(message = str(serializer.errors)), status=status.HTTP_400_BAD_REQUEST)
-        
-        phone = data['phone']
-        otp = data['otp']
-        password = data['password']
-
-        try:
-            PhoneOTP.objects.get(phone=phone, otp=otp, is_verified=True)
-            user = User.objects.get(phone=phone)
-            print(user)
-            if check_password(password, user.password):
-                login(request, user)
-                tokens = create_token_for_user(user)
-                print(tokens, "tokes")
-                return Response(response(True, tokens,"Login successful"), status=status.HTTP_200_OK)
-            else:
-                return Response(response(message="Invalid credentials" ), status=status.HTTP_401_UNAUTHORIZED)
-        except PhoneOTP.DoesNotExist:
-            return Response(response(message="Invalid OTP" ), status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            print(e)
-            return Response(response(message="somthing went wrong", error=str(e)), status=status.HTTP_400_BAD_REQUEST)
-        
-
-class UserSignup(APIView):
-    serializer_class = SignupSerializer
-    def post(self, request):
-        data = self.request.data
+        data = request.data
         serializer = self.serializer_class(data=data)
 
         if not serializer.is_valid():
-            print(serializer.errors)
-            return Response(response(message=str(serializer.errors) ), status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(response(False, message=serializer.errors), status=status.HTTP_400_BAD_REQUEST)
+
+        email = data.get('email')
+        password = data.get('password')
+
         try:
-            phone = data.get('phone')
-            otp = data.get('otp')
-            email = data.get('email')
-            name = data.get('name')
-            password = data.get('password')
+            user = User.objects.filter(email=email, is_email_verified=True).first()
 
+            if not user:
+                return Response(response(False, message="User not found or email not verified"), status=status.HTTP_404_NOT_FOUND)
 
-            PhoneOTP.objects.get(phone=phone, otp=otp, is_verified=True)
+            if check_password(password, user.password):
+                login(request, user)
+                tokens = create_token_for_user(user)
+                return Response(response(True, tokens, "Login successful"), status=status.HTTP_200_OK)
+            else:
+                return Response(response(False, message="Invalid credentials"), status=status.HTTP_401_UNAUTHORIZED)
 
-            if User.objects.filter(Q(phone=phone)|Q(email=email)).exists():
-                return Response(response(message="Email/Phone already exists"), status=status.HTTP_400_BAD_REQUEST)
-            
-            user = User.objects.create(email=email, phone=phone, name=name)
-            user.set_password(password)
-            user.save()
-            tokens = create_token_for_user(user)
-            print(tokens, "tokens")
-            return Response(response(True, tokens,message="Signup successful"), status=status.HTTP_201_CREATED)
-        except PhoneOTP.DoesNotExist:
-            print("Error---->", str(e))
-            return Response(response(True,message="Invalid OTP" ), status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            print("Error---->", str(e))
-            return Response(response(message="somthing went wrong", error=str(e)), status=status.HTTP_400_BAD_REQUEST)
-
-
-     
-
+            print("Error ---->", str(e))
+            return Response(response(False, message="Something went wrong", error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+       
 class ForgotPassword(APIView):
-    serialzer_class = LoginSerializer
     def post(self, request):
         data = self.request.data
         serializer = self.serialzer_class(data=data)
@@ -252,23 +213,16 @@ class ForgotPassword(APIView):
         if not serializer.is_valid():
             return Response({"message": str(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
         
-        phone = data['phone']
-        otp = data['otp']
+        email = data['email']
         password = data['password']
 
         try:
-            PhoneOTP.objects.get(phone=phone, otp=otp, is_verified=True)
-            user = User.objects.get(phone=phone)
-            
+            user = User.objects.filter(email=email).first()
             user.set_password(password)  
             user.save()     
             return Response({"message": "Password Updated", "success": True}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
-            print("Error---->", str(e))
             return Response({"message": "User Does not exist", "success":False}, status=status.HTTP_400_BAD_REQUEST)
-        except PhoneOTP.DoesNotExist:
-            print("Error---->", str(e))
-            return Response({"message": "Invalid OTP", "success":False}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             print("Error---->", str(e))
             return Response({"message": f"Error {e}", "success": False}, status=status.HTTP_400_BAD_REQUEST)
