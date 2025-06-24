@@ -89,12 +89,16 @@ class Register(APIView):
 
             if not user.is_email_verified:
                 return Response(response(message="Email is not verified"), status=status.HTTP_400_BAD_REQUEST)
-
+            if user.phone and user.name and user.has_usable_password():
+                return Response(
+                    response(message="An account with this email is already registered."),
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             user.phone = phone
             user.set_password(password)
             user.name = name
             user.save()
-
+            PhoneOTP.objects.create(phone=phone)
             tokens = create_token_for_user(user)
             return Response(response(True, tokens, message="Signup successful"), status=status.HTTP_201_CREATED)
 
@@ -143,7 +147,6 @@ class RequestPhoneOTP(APIView):
             PhoneOTP.objects.filter(phone=phone).delete()
             otp = random.randint(100000, 999999)
             PhoneOTP.objects.create(phone=phone, otp=otp)
-            # send_otp(otp, phone)
             return Response(response(True, {"otp": otp}, message="OTP sent successfully"), status=status.HTTP_200_OK)
 
         except User.DoesNotExist:

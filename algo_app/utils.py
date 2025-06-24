@@ -121,19 +121,9 @@ class CustomPagination(PageNumberPagination):
 
 
 def send_email(subject, recipients, template_name, context):
-    """
-    General function to send HTML emails using Django.
-
-    :param subject: Subject of the email
-    :param recipients: List of recipient email addresses
-    :param template_name: Name of the HTML template (relative to templates dir)
-    :param context: Dictionary with template variables
-    :return: True if sent, False otherwise
-    """
     try:
         html_body = render_to_string(template_name, context)
-        from_email = settings.DEFAULT_FROM_EMAIL  # Make sure this is set
-
+        from_email = f"AlgoToday <{settings.DEFAULT_FROM_EMAIL}>"
         msg = EmailMultiAlternatives(subject, '', from_email, recipients)
         msg.attach_alternative(html_body, "text/html")
         msg.send()
