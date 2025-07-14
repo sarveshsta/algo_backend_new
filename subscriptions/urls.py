@@ -1,18 +1,20 @@
 from django.urls import path
-from .views import (
-    SubscriptionPlanCreateView,
-    SubscriptionPlanListView,
-    CreateSubscriptionView,
-    VerifyPaymentView,
-    RazorpayWebhookView,
-    ListUserSubscriptionAPIView
-)
+from .views import (CreateSubscriptionView,
+                    ListUserSubscriptionAPIView,
+                    UserSubscriptionCancelAPIView,
+                      VerifyPaymentView,
+SubscriptionPlanListView,
+SubscriptionCreateAPIView,
+RazorpayWebhookView
+
+                      )
 
 urlpatterns = [
-    path("plans/create/", SubscriptionPlanCreateView.as_view()),
+    path("plans/create/", SubscriptionCreateAPIView.as_view()),
     path("plans/", SubscriptionPlanListView.as_view()),
-    path("subscription/create/", CreateSubscriptionView.as_view()),
-    path("subscription/verify/", VerifyPaymentView.as_view()),
+    path("create/", CreateSubscriptionView.as_view()),
+    path("verify/", VerifyPaymentView.as_view()),
     path("webhook/razorpay/", RazorpayWebhookView.as_view()),
     path('users-subscriptions/', ListUserSubscriptionAPIView.as_view(), name='list-users'),
+    path('user-subscription-cancel/',UserSubscriptionCancelAPIView.as_view(),name='user-subscription-cancel')
 ]

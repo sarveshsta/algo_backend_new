@@ -2,7 +2,7 @@ from cryptography.fernet import Fernet
 import json
 from twilio.rest import Client
 from algo_today.settings import TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
-from rest_framework.exceptions import AuthenticationFailed, NotAuthenticated
+from rest_framework.exceptions import AuthenticationFailed, NotAuthenticated , PermissionDenied 
 from rest_framework import status
 from rest_framework_simplejwt.tokens import AccessToken,RefreshToken
 from rest_framework.views import exception_handler
@@ -12,10 +12,12 @@ from django.conf import settings
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework import serializers
-
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
+from .models import PhoneOTP,User
+from subscriptions.models import UserSubscription
+
 
 #SEND VERIFICATION
 
@@ -131,3 +133,21 @@ def send_email(subject, recipients, template_name, context):
     except Exception as e:
         print(f"Error sending email: {e}")
         return False
+
+
+
+def check_user_verification(user):
+    if not user.is_email_verified:
+        raise PermissionDenied('Email is not verified')
+    try:
+        mobile_verify = PhoneOTP.objects.get(phone = user)
+        if not mobile_verify.is_verified:
+            raise PermissionDenied('Mobile number is not verified')
+    except mobile_verify.DoesNotExist:
+        raise PermissionDenied('Mobile number record not found')
+    return True
+
+def has_active_subscription(user):
+    return UserSubscription.objects.filter(user=user, status="active").exists()
+
+

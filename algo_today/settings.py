@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'algo_app',
     'rest_framework',
     'subscriptions',
-    'django_filters'
+    'django_filters',
+    'strategy'
 ]
 
 MIDDLEWARE = [
