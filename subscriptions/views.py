@@ -18,25 +18,47 @@ from .razorpay_helper import (
     create_razorpay_order,
     verify_signature,
 )
-from rest_framework import generics, filters, status
+from rest_framework import filters, status , generics
 from algo_app.utils import CustomPagination, response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .models import SubscriptionPlan, UserSubscription, Payment, SubscriptionHistory
+from rest_framework.generics import (
+    CreateAPIView,
+    DestroyAPIView,
+    ListAPIView,
+    RetrieveAPIView,
+    UpdateAPIView,
+)
 
 
-class SubscriptionPlanCreateView(APIView):
+class SubscriptionCreateAPIView(CreateAPIView):
+    serializer_class = SubscriptionPlanSerializer
     permission_classes = [permissions.IsAdminUser]
 
-    def post(self, request):
-        serializer = SubscriptionPlanSerializer(data=request.data)
-        if serializer.is_valid():
-            plan = serializer.save()
-            razorpay_plan = create_razorpay_plan(plan)
-            plan.razorpay_plan_id = razorpay_plan.get("id")
-            plan.save()
-            return Response(SubscriptionPlanSerializer(plan).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def create(self, request, *args, **kwargs):
+        try:
+            razorpay_plan_id = request.data.get("razorpay_plan_id")
+            if not razorpay_plan_id:
+                return Response(response(message="razorpay_plan_id required"), status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            subscription = serializer.save()
+            subscription.razorpay_plan_id = razorpay_plan_id
+            subscription.save()
+
+            return Response(
+                response(True, self.get_serializer(subscription).data, "Subscription created successfully"),
+                status=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            print("Error ---->", str(e))
+            return Response(
+                response(message="Something went wrong", error=str(e)),
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class SubscriptionPlanListView(APIView):
@@ -47,7 +69,8 @@ class SubscriptionPlanListView(APIView):
         serializer = SubscriptionPlanSerializer(plans, many=True)
         return Response(serializer.data)
 
-
+# step 1 -> create plan from razerpay
+# strp 2 -> create subscription with that plan id 
 class CreateSubscriptionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -219,7 +242,7 @@ class RazorpayWebhookView(APIView):
 
 
 
-class ListUserSubscriptionAPIView(generics.ListAPIView):
+class ListUserSubscriptionAPIView(ListAPIView):
     queryset = UserSubscription.objects.all().order_by('created_at')
     serializer_class = UserSubscriptionSerializer
     pagination_class = CustomPagination
@@ -239,3 +262,39 @@ class ListUserSubscriptionAPIView(generics.ListAPIView):
         except Exception as e:
             print("Error---->", str(e))
             return Response(response(error=str(e)),status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class UserSubscriptionCancelAPIView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        email = request.data.get('email')
+
+        if not email:
+            return Response({"error":"Email is required"},status=status.HTTP_400_BAD_REQUEST)
+        
+
+        try:
+            subscription = UserSubscription.objects.get(user=email)
+            if subscription.status == 'cancelled':
+                serializer = UserSubscriptionSerializer(subscription)
+                return Response({'message':'User subscription is alerady cancelled','user':serializer},status=status.HTTP_200_OK)
+            
+            else:
+                subscription.status = 'cancelled'
+                subscription.save()
+                return Response({'User subscription cancelled successfully'},status=status.HTTP_200_OK)
+            
+        except UserSubscription.DoesNotExist:
+            return Response({'Subscription for this user does not exist'},status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error":f'An unexpected error occured:{str(e)}'})
+            
+
+
+
+            
+
+
+
+
+
