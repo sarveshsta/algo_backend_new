@@ -1,0 +1,71 @@
+// ohlc_vs_ohlc
+{
+    "type" : "",
+    "comparison_type" : "",
+    "operator" : "",
+    "left_ohlc" : "",
+    "left_multiplier" : "",
+    "left_candle_offset" : "",
+    "right_ohlc": "",
+    "right_multiplier" : "",
+    "right_candle_offset" : "",
+    "logic_operator" : ""
+}
+
+// ohlc_vs_indicator
+{
+    "type" : "",
+    "comparison_type" : "",
+    "operator" : "",
+    "left_ohlc" : "",
+    "left_multiplier" : "",
+    "left_candle_offset" : "",
+    "right_indicator": "",
+    "right_factor" : "",
+    "right_candle_count" : "",
+    "logic_operator" : ""
+}
+// indicator_vs_indicator
+{
+    "type" : "",
+    "comparison_type" : "",
+    "operator" : "",
+    "left_indicator" : "",
+    "left_factor" : "",
+    "left_candle_count" : "",
+    "right_indicator": "",
+    "right_factor" : "",
+    "right_candle_count" : "",
+    "logic_operator" : ""
+}
+// indicator_vs_value
+{
+    "type" : "",
+    "comparison_type" : "",
+    "operator" : "",
+    "left_indicator" : "",
+    "left_factor" : "",
+    "left_candle_count" : "",
+    "constant_value": "",
+    "logic_operator": ""
+}
+// spot
+{
+    "type": "",
+    "comparison_type": ""
+},
+// ohlc_vs_ltp
+{
+    "type" : "",
+    "comparison_type" : "",
+    "operator" : "",
+    "left_indicator" : "",
+    "left_factor" : "",
+    "left_candle_count" : "",
+}
+// target or stoploss
+{
+    "type": "",
+    "value_type": "",
+    "sl_tp_value": ""
+},
