@@ -16,16 +16,16 @@ def start_strategy(data):
 
 
 def stop_strategy(strategy_id):
-    url = f"{settings.FASTAPI_BASE_URL}{fastapi_routes.STOP_STRATEGY}/{strategy_id}"
-    response = requests.get(url=url)
+    url = f"{settings.FASTAPI_BASE_URL}{fastapi_routes.STOP_STRATEGY}?strategy_id={strategy_id}"
+    response = requests.post(url=url)
     return response.json()
 
-
+def strategy_status(strategy_id):
+    url = f"{settings.FASTAPI_BASE_URL}{fastapi_routes.STRATEGY_STATUS}?strategy_id={strategy_id}"
+    response = requests.post(url=url)
+    return response.json()
 
 def connect_account(dict, user_id):
-    if AngelOneCredential.objects.filter(user_id=user_id).exists():
-        return {"status": "error", "message": "Account already connected"}
-
     url = f"{settings.FASTAPI_BASE_URL}{fastapi_routes.CONNECT_ACCOUNT}"
     body = {
         "client_code": dict.get("client_code"),

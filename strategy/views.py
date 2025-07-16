@@ -3,7 +3,8 @@ from rest_framework.views import APIView
 from .serializers import (CreateStrategySerializer, 
                           StrategyConditionSerializer, 
                           StrategyExecutionInputSerializer,
-                          StrategySerializer)
+                          StrategySerializer,
+                          StrategyDropdownSerializer)
 from rest_framework.response import Response
 from algo_app.utils import (response)
 from rest_framework import status, serializers, generics, filters
@@ -12,10 +13,9 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .models import Strategy
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
-from algo_app.utils import CustomPagination
-
-
-
+from algo_app.utils import CustomPagination, generate_encrypted_token
+from algo_app.middlewares import IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount
+from algo_app.utility import stop_strategy, strategy_status
 
 
 
@@ -87,10 +87,11 @@ FASTAPI_URL = "http://localhost:8000/custome-strategy/run-strategy"  # move to .
 
 
 class StartStrategyAPIView(APIView):
+    # permission_classes = [IsAuthenticated, IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount]
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         data = request.data
         serializer = StrategyExecutionInputSerializer(data=data)
-
         if not serializer.is_valid():
             return Response(response(False, message=serializer.errors), status=status.HTTP_400_BAD_REQUEST)
 
@@ -127,7 +128,9 @@ class StartStrategyAPIView(APIView):
             }
 
             # POST to FastAPI
-            fastapi_response = requests.post(FASTAPI_URL, json=payload)
+            token = generate_encrypted_token(request.user.id, request.user.email)
+            headers = {"Authorization": token}
+            fastapi_response = requests.post(FASTAPI_URL, json=payload, headers=headers)
 
             if fastapi_response.status_code == 200:
                 return Response(response(True, fastapi_response.json(), "Strategy execution started"), status=200)
@@ -142,12 +145,23 @@ class StartStrategyAPIView(APIView):
             return Response(response(False, message="Something went wrong", error=str(e)), status=500)
 
 class StopStrategyAPIView(APIView):
-    def get(self, *args, **kwargs):
+    # permission_classes = [IsAuthenticated, IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount]
+    permission_classes = [IsAuthenticated]
+    def post(self, *args, **kwargs):
         if not self.kwargs['strategy_id']:
             return Response("strategy_id is required", status_code=status.HTTP_400_BAD_REQUEST)
         response = stop_strategy(self.kwargs['strategy_id'])
-        return Response(response, status_code=status.HTTP_200_OK)
+        return Response(response, status=status.HTTP_200_OK)
 
+class StrategyStatusAPIView(APIView):
+    # permission_classes = [IsAuthenticated, IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, *args, **kwargs):
+        if not self.kwargs['strategy_id']:
+            return Response("strategy_id is required", status_code=status.HTTP_400_BAD_REQUEST)
+        response = strategy_status(self.kwargs['strategy_id'])
+        return Response(response, status=status.HTTP_200_OK)
 class ListActiveStrategiesByAdminAPIView(generics.ListAPIView):
     queryset = Strategy.objects.filter(is_active=True, created_by__is_staff=True).order_by('-created_at')
     serializer_class = StrategySerializer
@@ -165,6 +179,20 @@ class ListActiveStrategiesByAdminAPIView(generics.ListAPIView):
                 serializer = self.get_serializer(page, many=True)
                 return self.get_paginated_response(response(True, serializer.data, "Strategies retrieved successfully"))
             serializer = self.get_serializer(queryset, many=True)
+            return Response(response(True, serializer.data, "Strategies retrieved successfully"), status=status.HTTP_200_OK)
+        except Exception as e:
+            print("Error---->", str(e))
+            return Response(response(error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+class ListStrategiesForDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            strategies = Strategy.objects.filter(is_active=True, created_by__is_staff=True).order_by('-created_at')
+            serializer = StrategyDropdownSerializer(strategies, many=True)
             return Response(response(True, serializer.data, "Strategies retrieved successfully"), status=status.HTTP_200_OK)
         except Exception as e:
             print("Error---->", str(e))

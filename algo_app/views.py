@@ -18,12 +18,12 @@ from .serializers import (
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework import generics, filters, status
-from .models import PhoneOTP, User, Wallet, Transaction
+from .models import PhoneOTP, User, Wallet, Transaction, AngelOneCredential
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .utils import send_email, send_otp, create_token_for_user, response,CustomPagination
 from .utility import start_strategy, stop_strategy, connect_account, get_tokens, trade_details, get_index_expiry, get_index_strike_price
-
+from .middlewares import HasActiveSubscription, IsVerified, HasConnectedAngelOneAccount
 class RequestEmailOTP(APIView):
     def post(self, request):
         data = self.request.data
@@ -147,6 +147,7 @@ class RequestPhoneOTP(APIView):
             PhoneOTP.objects.filter(phone=phone).delete()
             otp = random.randint(100000, 999999)
             PhoneOTP.objects.create(phone=phone, otp=otp)
+            send_otp(otp, phone)
             return Response(response(True, {"otp": otp}, message="OTP sent successfully"), status=status.HTTP_200_OK)
 
         except User.DoesNotExist:
@@ -244,15 +245,24 @@ class UserLogout(APIView):
 
 
 class ConnectAccount(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
+
     def post(self, request):
         try:
             user_id = request.user.id
-            response = connect_account(request.data, user_id)
-            return Response(response, status=status.HTTP_200_OK)
+            if AngelOneCredential.objects.filter(user_id=user_id).exists():
+                return Response(response(message="Account is already connected."),status=status.HTTP_400_BAD_REQUEST)
+
+            # Proceed to connect the account
+            res = connect_account(request.data, user_id)
+            return Response(res, status=status.HTTP_200_OK)
+
         except Exception as e:
-            print("Error---->", str(e))
-            return Response(response(error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            print("Error ---->", str(e))
+            return Response(
+                response(error=str(e)),
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class TradeAPI(APIView):
     def get(self, request):
@@ -356,7 +366,6 @@ class index_strike_price(APIView):
         except Exception as e:
             print("Error---->", str(e))
             return Response(response(False, message="Something went wrong", error=str(e)),status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 
 class ListUserAPIView(generics.ListAPIView):

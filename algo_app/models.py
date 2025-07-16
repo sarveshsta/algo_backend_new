@@ -156,6 +156,7 @@ class AngelOneCredential(models.Model):
     client_code = models.CharField(max_length=50)
     password = models.TextField()  # Encrypted
     totp_secret = models.TextField()  # Encrypted
+    api_key = models.CharField(max_length=50,blank=True, null=True)
     jwt_token = models.TextField(blank=True, null=True)
     feed_token = models.TextField(blank=True, null=True)
     token_expiry = models.DateTimeField(blank=True, null=True)

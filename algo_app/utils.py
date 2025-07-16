@@ -25,10 +25,10 @@ def send_otp(otp, to_number):
     client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
     client.messages.create(
-            body = f'Greetings, your OTP for Algo-Today is {otp}. Please do not share it with anyone.',
-            from_= '+12034634291',
-            to = '+918839003067'
-        )
+        body=f'Greetings, your OTP for Algo-Today is {otp}. Please do not share it with anyone.',
+        from_='+12295151945',
+        to=f'+91{to_number}'
+    )
 
 
 def set_user_custom_claims(user,access_token):
@@ -54,12 +54,23 @@ def custom_exception_handler(exc, context):
     if isinstance(exc, (AuthenticationFailed, NotAuthenticated)):
         response = Response({
             'success': False,
+             'data': {},
             "mesage":"User is Unauthorized",
             'error': 'Authentication failed. Your token is invalid or expired.'
         }, status=status.HTTP_401_UNAUTHORIZED)
+
+    elif isinstance(exc, PermissionDenied):
+        return Response({
+            'success': False,
+            'data': {},
+            'message': str(exc),
+            'error': 'Permission denied'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
     if isinstance(exc, ValidationError):
             response.data = {
                 'success': False,
+                'data': {},
                 'message': 'Validation failed',
                 'errors': response.data
             }
@@ -135,19 +146,5 @@ def send_email(subject, recipients, template_name, context):
         return False
 
 
-
-def check_user_verification(user):
-    if not user.is_email_verified:
-        raise PermissionDenied('Email is not verified')
-    try:
-        mobile_verify = PhoneOTP.objects.get(phone = user)
-        if not mobile_verify.is_verified:
-            raise PermissionDenied('Mobile number is not verified')
-    except mobile_verify.DoesNotExist:
-        raise PermissionDenied('Mobile number record not found')
-    return True
-
-def has_active_subscription(user):
-    return UserSubscription.objects.filter(user=user, status="active").exists()
 
 

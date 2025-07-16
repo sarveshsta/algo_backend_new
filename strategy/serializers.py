@@ -123,3 +123,10 @@ class StrategySerializer(serializers.ModelSerializer):
     class Meta:
         model = Strategy
         fields = "__all__"
+
+# serializers.py
+
+class StrategyDropdownSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Strategy
+        fields = ['id', 'name']
