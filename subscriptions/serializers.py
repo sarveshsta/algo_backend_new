@@ -14,13 +14,13 @@ class UserBasicSerializer(serializers.ModelSerializer):
         model = User
         fields = ['name', 'email']
 
-class SubscriptionPlanSerializer(serializers.ModelSerializer):
+class SubscriptionPlanBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubscriptionPlan
         fields = ['name', 'price', 'duration_type', 'duration_value']
 class UserSubscriptionSerializer(serializers.ModelSerializer):
     user_detail = UserBasicSerializer(source='user', read_only=True)
-    plan_detail = SubscriptionPlanSerializer(source='plan', read_only=True)
+    plan_detail = SubscriptionPlanBaseSerializer(source='plan', read_only=True)
     class Meta:
         model = UserSubscription
         fields = '__all__'
@@ -36,9 +36,3 @@ class PaymentSerializer(serializers.ModelSerializer):
 class UpdateSubscriptionPlanStatusSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     is_active = serializers.BooleanField()
-
-
-class SubscriptionsPlanSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SubscriptionPlan
-        fields = "__all__"
