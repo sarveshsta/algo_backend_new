@@ -4,6 +4,8 @@ from algo_app.models import User
 from django.utils import timezone
 
 
+
+
 class SubscriptionPlan(models.Model):
     PLAN_TYPES = [
         ('monthly', 'Monthly'),
