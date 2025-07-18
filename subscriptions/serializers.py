@@ -36,3 +36,9 @@ class PaymentSerializer(serializers.ModelSerializer):
 class UpdateSubscriptionPlanStatusSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     is_active = serializers.BooleanField()
+
+
+class SubscriptionsPlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubscriptionPlan
+        fields = "__all__"
