@@ -11,7 +11,8 @@ from .serializers import (
     SubscriptionPlanSerializer,
     UserSubscriptionSerializer,
     PaymentSerializer,
-    UpdateSubscriptionPlanStatusSerializer
+    UpdateSubscriptionPlanStatusSerializer,
+    SubscriptionsPlanSerializer
 )
 from .razorpay_helper import (
     create_razorpay_plan,
@@ -67,7 +68,7 @@ class SubscriptionPlanListView(APIView):
 
     def get(self, request):
         plans = SubscriptionPlan.objects.filter(is_active=True)
-        serializer = SubscriptionPlanSerializer(plans, many=True)
+        serializer = SubscriptionsPlanSerializer(plans, many=True)
         return Response(serializer.data)
 
 # step 1 -> create plan from razerpay
