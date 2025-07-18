@@ -11,6 +11,7 @@ from .serializers import (
     SubscriptionPlanSerializer,
     UserSubscriptionSerializer,
     PaymentSerializer,
+    UpdateSubscriptionPlanStatusSerializer
 )
 from .razorpay_helper import (
     create_razorpay_plan,
@@ -71,12 +72,16 @@ class SubscriptionPlanListView(APIView):
 
 # step 1 -> create plan from razerpay
 # strp 2 -> create subscription with that plan id 
+
 class CreateSubscriptionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         user = request.user
         plan_id = request.data.get("plan_id")
+
+        if not plan_id:
+            return Response({"error": "plan_id is required"}, status=400)
 
         try:
             plan = SubscriptionPlan.objects.get(id=plan_id, is_active=True)
@@ -87,15 +92,26 @@ class CreateSubscriptionView(APIView):
         razorpay_subscription = create_razorpay_subscription(plan.razorpay_plan_id, user.email)
         razorpay_order = create_razorpay_order(plan.price)
 
-        # Create user subscription and payment record
-        user_subscription = UserSubscription.objects.create(
+        # Check for existing subscription for user
+        user_subscription, created = UserSubscription.objects.get_or_create(
             user=user,
-            plan=plan,
-            razorpay_subscription_id=razorpay_subscription["id"],
-            status="pending",
-            auto_renew=False
+            defaults={
+                "plan": plan,
+                "razorpay_subscription_id": razorpay_subscription["id"],
+                "status": "pending",
+                "auto_renew": False,
+            }
         )
 
+        if not created:
+            # Update existing record
+            user_subscription.plan = plan
+            user_subscription.razorpay_subscription_id = razorpay_subscription["id"]
+            user_subscription.status = "pending"
+            user_subscription.auto_renew = False
+            user_subscription.save()
+
+        # Create Payment
         Payment.objects.create(
             user=user,
             subscription=user_subscription,
@@ -111,6 +127,7 @@ class CreateSubscriptionView(APIView):
             "amount": float(plan.price),
             "currency": "INR"
         }, status=201)
+
 
 
 class VerifyPaymentView(APIView):
@@ -290,6 +307,38 @@ class UserSubscriptionCancelAPIView(APIView):
             return Response({"error":f'An unexpected error occured:{str(e)}'})
             
 
+
+
+
+
+class UpdateSubscriptionPlanStatusAPIView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            serializer = UpdateSubscriptionPlanStatusSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(response(False, error=serializer.errors), status=status.HTTP_400_BAD_REQUEST)
+
+            plan_id = serializer.validated_data['id']
+            is_active = serializer.validated_data['is_active']
+
+            try:
+                plan = SubscriptionPlan.objects.get(id=plan_id)
+            except SubscriptionPlan.DoesNotExist:
+                return Response(response(False, error="Subscription plan not found"), status=status.HTTP_404_NOT_FOUND)
+
+            plan.is_active = is_active
+            plan.save()
+
+            return Response(
+                response(True, data={"id": str(plan.id), "is_active": plan.is_active}, message="Plan status updated successfully"),
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            print("Error ---->", str(e))
+            return Response(response(False, error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
             
