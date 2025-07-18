@@ -12,7 +12,6 @@ from .serializers import (
     UserSubscriptionSerializer,
     PaymentSerializer,
     UpdateSubscriptionPlanStatusSerializer,
-    SubscriptionsPlanSerializer
 )
 from .razorpay_helper import (
     create_razorpay_plan,
@@ -67,8 +66,16 @@ class SubscriptionPlanListView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        plans = SubscriptionPlan.objects.filter(is_active=True)
-        serializer = SubscriptionsPlanSerializer(plans, many=True)
+        is_active = request.query_params.get('is_active')
+
+        if is_active is not None:
+            # Convert to boolean safely
+            is_active = is_active.lower() == 'true'
+            plans = SubscriptionPlan.objects.filter(is_active=is_active)
+        else:
+            plans = SubscriptionPlan.objects.all()
+
+        serializer = SubscriptionPlanSerializer(plans, many=True)
         return Response(serializer.data)
 
 # step 1 -> create plan from razerpay
