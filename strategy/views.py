@@ -87,8 +87,8 @@ FASTAPI_URL = "http://localhost:8000/custome-strategy/run-strategy"  # move to .
 
 
 class StartStrategyAPIView(APIView):
-    # permission_classes = [IsAuthenticated, IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount]
+    # permission_classes = [IsAuthenticated]
     def post(self, request):
         data = request.data
         serializer = StrategyExecutionInputSerializer(data=data)
@@ -145,8 +145,8 @@ class StartStrategyAPIView(APIView):
             return Response(response(False, message="Something went wrong", error=str(e)), status=500)
 
 class StopStrategyAPIView(APIView):
-    # permission_classes = [IsAuthenticated, IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount]
+    # permission_classes = [IsAuthenticated]
     def post(self, *args, **kwargs):
         if not self.kwargs['strategy_id']:
             return Response("strategy_id is required", status_code=status.HTTP_400_BAD_REQUEST)
@@ -154,8 +154,8 @@ class StopStrategyAPIView(APIView):
         return Response(response, status=status.HTTP_200_OK)
 
 class StrategyStatusAPIView(APIView):
-    # permission_classes = [IsAuthenticated, IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount]
+    # permission_classes = [IsAuthenticated]
 
     def post(self, *args, **kwargs):
         if not self.kwargs['strategy_id']:
