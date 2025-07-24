@@ -31,6 +31,8 @@ from rest_framework.generics import (
     RetrieveAPIView,
     UpdateAPIView,
 )
+from algo_app.middlewares import IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount
+
 
 
 class SubscriptionCreateAPIView(CreateAPIView):
@@ -82,7 +84,7 @@ class SubscriptionPlanListView(APIView):
 # strp 2 -> create subscription with that plan id 
 
 class CreateSubscriptionView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsVerified]
 
     def post(self, request):
         user = request.user
@@ -205,32 +207,7 @@ class RazorpayWebhookView(APIView):
         payload_data = payload.get("payload", {})
 
         try:
-            if event == "payment.captured":
-                payment_id = payload_data["payment"]["entity"]["id"]
-                order_id = payload_data["payment"]["entity"]["order_id"]
-                payment = Payment.objects.filter(razorpay_order_id=order_id).first()
-
-                if payment and payment.status != "completed":
-                    payment.razorpay_payment_id = payment_id
-                    payment.status = "completed"
-                    payment.save()
-
-                    sub = payment.subscription
-                    sub.status = "active"
-                    sub.start_date = timezone.now()
-                    sub.end_date = sub.start_date + timezone.timedelta(
-                        days=sub.plan.duration_value * (30 if sub.plan.duration_type == "monthly" else 365 if sub.plan.duration_type == "yearly" else 7)
-                    )
-                    sub.save()
-
-                    SubscriptionHistory.objects.create(
-                        user=sub.user,
-                        plan=sub.plan,
-                        action="activated",
-                        details={"source": "webhook", "payment_id": payment_id}
-                    )
-
-            elif event == "subscription.completed":
+            if event == "subscription.completed":
                 sub_id = payload_data["subscription"]["entity"]["id"]
                 sub = UserSubscription.objects.filter(razorpay_subscription_id=sub_id).first()
                 if sub:
@@ -243,22 +220,6 @@ class RazorpayWebhookView(APIView):
                         action="expired",
                         details={"source": "webhook"}
                     )
-
-            elif event == "payment.failed":
-                order_id = payload_data["payment"]["entity"]["order_id"]
-                payment = Payment.objects.filter(razorpay_order_id=order_id).first()
-                if payment:
-                    payment.status = "failed"
-                    payment.failure_reason = payload_data["payment"]["entity"].get("error_description", "Unknown")
-                    payment.save()
-
-                    SubscriptionHistory.objects.create(
-                        user=payment.user,
-                        plan=payment.subscription.plan,
-                        action="failed",
-                        details={"source": "webhook"}
-                    )
-
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
