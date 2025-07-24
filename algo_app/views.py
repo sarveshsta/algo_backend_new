@@ -41,10 +41,8 @@ class RequestEmailOTP(APIView):
             user.verification_code = otp
             print("OTP", otp)
             user.save()
-            
-            return Response(response(True, {"otp": otp}, "OTP sent"), status=status.HTTP_200_OK)
+            return Response(response(True, message="OTP sent"), status=status.HTTP_200_OK)
         except Exception as e:
-            print(e)
             return Response(response(message="somthing went wrong", error=str(e)), status=status.HTTP_400_BAD_REQUEST)
         
 class VerifyEmailOTP(APIView):
@@ -100,7 +98,9 @@ class Register(APIView):
             user.save()
             PhoneOTP.objects.create(phone=phone)
             tokens = create_token_for_user(user)
-            return Response(response(True, tokens, message="Signup successful"), status=status.HTTP_201_CREATED)
+            user_data = UserInfoSerializer(user).data
+            flat_data = { **user_data,**tokens}
+            return Response(response(True, flat_data, message="Signup successful"), status=status.HTTP_201_CREATED)
 
         except Exception as e:
             print("Error ---->", str(e))
@@ -201,7 +201,9 @@ class Login(APIView):
             if check_password(password, user.password):
                 login(request, user)
                 tokens = create_token_for_user(user)
-                return Response(response(True, tokens, "Login successful"), status=status.HTTP_200_OK)
+                user_data = UserInfoSerializer(user).data
+                flat_data = { **user_data,**tokens}
+                return Response(response(True, flat_data, "Login successful"), status=status.HTTP_200_OK)
             else:
                 return Response(response(False, message="Invalid credentials"), status=status.HTTP_401_UNAUTHORIZED)
 

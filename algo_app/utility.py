@@ -31,6 +31,7 @@ def connect_account(dict, user_id):
         "client_code": dict.get("client_code"),
         "password": dict.get("password"),
         "totp_secret": dict.get("totp_secret"),
+        "api_key" : dict.get("api_key")
     }
 
     response = requests.post(url=url, json=body)
@@ -43,7 +44,8 @@ def connect_account(dict, user_id):
             user=user,
             client_code=dict.get("client_code"),
             password=dict.get("password"),       
-            totp_secret=dict.get("totp_secret")  
+            totp_secret=dict.get("totp_secret"), 
+            api_key=dict.get("api_key"), 
         )
     
     return res_data
