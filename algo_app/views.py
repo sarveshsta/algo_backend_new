@@ -212,9 +212,10 @@ class Login(APIView):
             return Response(response(False, message="Something went wrong", error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
        
 class ForgotPassword(APIView):
+    serializer_class = LoginSerializer
     def post(self, request):
         data = self.request.data
-        serializer = self.serialzer_class(data=data)
+        serializer = self.serializer_class(data=data)
 
         if not serializer.is_valid():
             return Response({"message": str(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
