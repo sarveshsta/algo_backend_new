@@ -36,10 +36,10 @@ urlpatterns = [
     path('request-phone-otp/', RequestPhoneOTP.as_view()),
     path('verify-phone-otp/',  VerifyPhoneOTP.as_view()),
 
-
-  
     path('update-password/', ForgotPassword.as_view()),
     path('logout/', UserLogout.as_view()),
+
+  
     path('start/', RunStrategy.as_view(), name="start"),
     path('stop/', StopStrategy.as_view(), name="stop"),
     path('order-history/', PreviousOrderList.as_view(), name="order_history"),
