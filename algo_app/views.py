@@ -418,3 +418,19 @@ class UpdateUserStatusAPIView(generics.UpdateAPIView):
             return Response(response(error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
+class CheckAngelOneConnectionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request,*args, **kwargs):
+        try:
+            is_connected = AngelOneCredential.objects.filter(user=request.user.id).exists()
+
+            if is_connected:
+                return Response(response(True, message="AngelOne account is already connected"), status=status.HTTP_200_OK)
+            else:
+                return Response(response(False, message="AngelOne account is not connected"), status=status.HTTP_200_OK)
+
+        except User.DoesNotExist:
+            return Response(response(error="User not found"), status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(response(error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
