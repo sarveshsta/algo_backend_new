@@ -311,7 +311,22 @@ class UpdateSubscriptionPlanStatusAPIView(APIView):
 
 
             
+class CheckUserSubscriptionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, *args, **kwargs):
+        try:
+            is_connected = UserSubscription.objects.filter(
+                user=request.user.id, status="active"
+            ).exists()
+
+            if is_connected:
+                return Response(response(True, message="You already have an active subscription."), status=status.HTTP_200_OK)
+            else:
+                return Response(response(False, message="You do not have an active subscription."), status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(response(error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 

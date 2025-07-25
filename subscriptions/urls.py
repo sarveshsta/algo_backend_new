@@ -6,7 +6,8 @@ from .views import (CreateSubscriptionView,
 SubscriptionPlanListView,
 SubscriptionCreateAPIView,
 RazorpayWebhookView,
-UpdateSubscriptionPlanStatusAPIView
+UpdateSubscriptionPlanStatusAPIView,
+CheckUserSubscriptionAPIView
 
                       )
 
@@ -19,4 +20,5 @@ urlpatterns = [
     path('users-subscriptions/', ListUserSubscriptionAPIView.as_view(), name='list-users'),
     path('user-subscription-cancel/',UserSubscriptionCancelAPIView.as_view(),name='user-subscription-cancel'),
     path('plans/update-status/', UpdateSubscriptionPlanStatusAPIView.as_view(), name='update-subscription-plan-status'),
+    path('check-user-subcription/', CheckUserSubscriptionAPIView.as_view(), name='check-user-subcription'),
 ]

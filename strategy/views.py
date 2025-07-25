@@ -197,3 +197,5 @@ class ListStrategiesForDropdownAPIView(APIView):
         except Exception as e:
             print("Error---->", str(e))
             return Response(response(error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
