@@ -194,9 +194,11 @@ class Login(APIView):
 
         try:
             user = User.objects.filter(email=email, is_email_verified=True).first()
-
             if not user:
                 return Response(response(False, message="User not found or email not verified"), status=status.HTTP_404_NOT_FOUND)
+    
+            if not user.is_active == True:
+                return Response(response(False, message="admin has deactivate you account, contact support"), status=status.HTTP_404_NOT_FOUND)
 
             if check_password(password, user.password):
                 login(request, user)
