@@ -20,7 +20,7 @@ from .views import (
     RequestEmailOTP,
     VerifyEmailOTP,
     Register,
-    VerifyPhoneOTP
+    VerifyPhoneOTP,CheckAngelOneConnectionAPIView
 
 )
 
@@ -54,6 +54,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('users/', ListUserAPIView.as_view(), name='list-users'),
     path("users/update-status/<str:id>/", UpdateUserStatusAPIView.as_view(), name="update-user-status"),
+    path('user/angelone-connection/', CheckAngelOneConnectionAPIView.as_view(), name='check-angelone-connection'),
 
 ]
 
