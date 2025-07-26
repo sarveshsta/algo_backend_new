@@ -24,6 +24,9 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .utils import send_email, send_otp, create_token_for_user, response,CustomPagination
 from .utility import start_strategy, stop_strategy, connect_account, get_tokens, trade_details, get_index_expiry, get_index_strike_price
 from .middlewares import HasActiveSubscription, IsVerified, HasConnectedAngelOneAccount
+# your_app/views.py
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .utils import CustomTokenObtainPairSerializer
 class RequestEmailOTP(APIView):
     def post(self, request):
         data = self.request.data
@@ -198,7 +201,7 @@ class Login(APIView):
                 return Response(response(False, message="User not found or email not verified"), status=status.HTTP_404_NOT_FOUND)
     
             if not user.is_active == True:
-                return Response(response(False, message="admin has deactivate you account, contact support"), status=status.HTTP_404_NOT_FOUND)
+                return Response(response(False, message="admin has deactivate you account, contact support"), status=status.HTTP_400_BAD_REQUEST)
 
             if check_password(password, user.password):
                 login(request, user)
@@ -436,3 +439,9 @@ class CheckAngelOneConnectionAPIView(APIView):
             return Response(response(error="User not found"), status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response(response(error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
