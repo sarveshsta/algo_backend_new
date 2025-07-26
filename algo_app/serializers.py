@@ -46,3 +46,4 @@ class UserInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "phone", "name", "username", "email"]
+

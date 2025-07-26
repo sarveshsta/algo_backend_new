@@ -20,7 +20,8 @@ from .views import (
     RequestEmailOTP,
     VerifyEmailOTP,
     Register,
-    VerifyPhoneOTP,CheckAngelOneConnectionAPIView
+    VerifyPhoneOTP,CheckAngelOneConnectionAPIView,
+    CustomTokenObtainPairView
 
 )
 
@@ -50,7 +51,7 @@ urlpatterns = [
     path('token/<str:index>/', index_expiry.as_view(), name='index_expiry'),
     path('token/<str:index>/<str:expiry>/', index_strike_price.as_view(), name='index_strike_price'),
     path('trade-details/', get_trade_details.as_view(), name='get_trade_details'),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('users/', ListUserAPIView.as_view(), name='list-users'),
     path("users/update-status/<str:id>/", UpdateUserStatusAPIView.as_view(), name="update-user-status"),

@@ -17,6 +17,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from .models import PhoneOTP,User
 from subscriptions.models import UserSubscription
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 #SEND VERIFICATION
@@ -77,6 +78,20 @@ def custom_exception_handler(exc, context):
             response.status_code = status.HTTP_400_BAD_REQUEST
     return response
 
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        return {
+            'success': True,
+            'data': {
+                'refresh': data['refresh'],
+                'access': data['access']
+            },
+            'message': 'Login successful',
+            'error': None
+        }
 
 
 #API RESPONSE
