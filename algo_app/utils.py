@@ -56,7 +56,7 @@ def custom_exception_handler(exc, context):
         response = Response({
             'success': False,
              'data': {},
-            "mesage":"User is Unauthorized",
+            "message":"User is Unauthorized",
             'error': 'Authentication failed. Your token is invalid or expired.'
         }, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -79,19 +79,32 @@ def custom_exception_handler(exc, context):
     return response
 
 
+# your_app/serializers.py
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.exceptions import AuthenticationFailed
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        data = super().validate(attrs)
+        try:
+            data = super().validate(attrs)
+            return {
+                'success': True,
+                'data': {
+                    'refresh': data['refresh'],
+                    'access': data['access']
+                },
+                'message': 'Login successful',
+                'error': None
+            }
+        except AuthenticationFailed as e:
+            # This handles invalid credentials
+            return {
+                'success': False,
+                'data': {},
+                'message': 'Invalid credentials',
+                'error': str(e)
+            }
 
-        return {
-            'success': True,
-            'data': {
-                'refresh': data['refresh'],
-                'access': data['access']
-            },
-            'message': 'Login successful',
-            'error': None
-        }
 
 
 #API RESPONSE
