@@ -1,4 +1,5 @@
 import email
+import time
 import random
 from django.db.models import Q
 from rest_framework import status
@@ -21,7 +22,7 @@ from rest_framework import generics, filters, status
 from .models import PhoneOTP, User, Wallet, Transaction, AngelOneCredential
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .utils import send_email, send_otp, create_token_for_user, response,CustomPagination
+from .utils import send_email, send_otp, create_token_for_user, response,CustomPagination, fetch_all_indices
 from .utility import start_strategy, stop_strategy, connect_account, get_tokens, trade_details, get_index_expiry, get_index_strike_price
 from .middlewares import HasActiveSubscription, IsVerified, HasConnectedAngelOneAccount
 # your_app/views.py
@@ -291,6 +292,7 @@ class RunStrategy(APIView):
         print(self.request.data)
         response = start_strategy(request.data)
         return Response(response, status=status.HTTP_200_OK)
+ 
 
 
 class StopStrategy(APIView):
@@ -445,3 +447,21 @@ class CheckAngelOneConnectionAPIView(APIView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+
+
+
+
+
+class NSEIndicesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        try:
+            results = fetch_all_indices()
+            print(results)
+            return Response({"success": True, "data": results}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"success": False, "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
