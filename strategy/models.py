@@ -3,11 +3,13 @@ from django.db import models
 from algo_app.models import User
 
 
+
 class Strategy(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -16,8 +18,7 @@ class Strategy(models.Model):
         return self.name
 
 class StrategyCondition(models.Model):
-    import uuid
-    from django.db import models
+
 
     CONDITION_TYPE_CHOICES = [
         ('pre_buy', 'Pre Buy'),
