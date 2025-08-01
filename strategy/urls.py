@@ -5,8 +5,10 @@ from .views import (
    ListActiveStrategiesByAdminAPIView,
    StopStrategyAPIView,
    StrategyStatusAPIView,
-   ListStrategiesForDropdownAPIView
-
+   ListStrategiesForDropdownAPIView,
+   DeleteStrategyAPIView,
+   GetStrategyByIdAPIView,
+   UpdateStrategyByIdAPIView
 )
 
 urlpatterns = [
@@ -16,4 +18,7 @@ urlpatterns = [
     path("strategy-status/<str:strategy_id>", StrategyStatusAPIView.as_view(), name="strategy_status"),
     path("all-strategy/", ListActiveStrategiesByAdminAPIView.as_view(), name="all_strategy"),
     path("strategies-dropdown/", ListStrategiesForDropdownAPIView.as_view(), name="strategies_dropdown"),
+    path("delete-strategy/", DeleteStrategyAPIView.as_view(), name="delete_strategy"),
+    path("get-strategy/<str:strategy_id>/", GetStrategyByIdAPIView.as_view(), name="get_strategy"),
+    path("update-strategy/<str:strategy_id>/", UpdateStrategyByIdAPIView.as_view(), name="update_strategy"),
 ]

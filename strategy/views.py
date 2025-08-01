@@ -4,13 +4,14 @@ from .serializers import (CreateStrategySerializer,
                           StrategyConditionSerializer, 
                           StrategyExecutionInputSerializer,
                           StrategySerializer,
-                          StrategyDropdownSerializer)
+                          StrategyDropdownSerializer,
+                          StrategyDetailSerializer)
 from rest_framework.response import Response
 from algo_app.utils import (response)
 from rest_framework import status, serializers, generics, filters
     
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .models import Strategy
+from .models import Strategy, StrategyCondition
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from algo_app.utils import CustomPagination, generate_encrypted_token
@@ -163,7 +164,7 @@ class StrategyStatusAPIView(APIView):
         response = strategy_status(self.kwargs['strategy_id'])
         return Response(response, status=status.HTTP_200_OK)
 class ListActiveStrategiesByAdminAPIView(generics.ListAPIView):
-    queryset = Strategy.objects.filter(is_active=True, created_by__is_staff=True).order_by('-created_at')
+    queryset = Strategy.objects.filter(is_active=True, is_deleted = False, created_by__is_staff=True).order_by('-created_at')
     serializer_class = StrategySerializer
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated]
@@ -191,11 +192,77 @@ class ListStrategiesForDropdownAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         try:
-            strategies = Strategy.objects.filter(is_active=True, created_by__is_staff=True).order_by('-created_at')
+            strategies = Strategy.objects.filter(is_active=True, is_deleted=False, created_by__is_staff=True).order_by('-created_at')
             serializer = StrategyDropdownSerializer(strategies, many=True)
             return Response(response(True, serializer.data, "Strategies retrieved successfully"), status=status.HTTP_200_OK)
         except Exception as e:
             print("Error---->", str(e))
             return Response(response(error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class DeleteStrategyAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            strategy_id = request.data.get("strategy_id")
+            if not strategy_id:
+                return Response(response(False, message="`strategy_id` is required."), status=status.HTTP_400_BAD_REQUEST)
+
+            strategy = Strategy.objects.filter(id=strategy_id).first()
+            if not strategy:
+                return Response(response(False, message="Strategy not found."), status=status.HTTP_404_NOT_FOUND)
+
+            strategy.is_deleted = True
+            strategy.save()
+            return Response(response(True, message="Strategy deleted successfully."), status=status.HTTP_200_OK)
+        except Exception as e:
+            print("Error---->", str(e))
+            return Response(response(error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class GetStrategyByIdAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, strategy_id, *args, **kwargs):
+        try:
+            strategy = Strategy.objects.prefetch_related('strategycondition_set').get(id=strategy_id, is_active=True)
+            serializer = StrategyDetailSerializer(strategy)
+            return Response(response(True, serializer.data, "Strategy retrieved successfully"), status=status.HTTP_200_OK)
+        except Strategy.DoesNotExist:
+            return Response(response(False, {}, "Strategy not found"), status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(response(False, {}, str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+class UpdateStrategyByIdAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, strategy_id, *args, **kwargs):
+        try:
+            if not request.data:
+                return Response(response(False, {}, "Request body cannot be empty"), status=status.HTTP_400_BAD_REQUEST)
+                
+            strategy = Strategy.objects.get(id=strategy_id, is_active=True)
+
+            with transaction.atomic():
+                # Update basic fields
+                strategy.name = request.data.get("name", strategy.name)
+                strategy.description = request.data.get("description", strategy.description)
+                strategy.save()
+
+                # Delete old conditions
+                StrategyCondition.objects.filter(strategy=strategy).delete()
+
+                # Add new conditions
+                conditions = request.data.get("conditions", [])
+                new_conditions = []
+                for cond_data in conditions:
+                    new_conditions.append(StrategyCondition(strategy=strategy, **cond_data))
+                StrategyCondition.objects.bulk_create(new_conditions)
+
+            return Response(response(True, {}, "Strategy updated successfully"), status=status.HTTP_200_OK)
+
+        except Strategy.DoesNotExist:
+            return Response(response(False, {}, "Strategy not found"), status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(response(False, {}, str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)

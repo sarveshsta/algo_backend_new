@@ -130,3 +130,23 @@ class StrategyDropdownSerializer(serializers.ModelSerializer):
     class Meta:
         model = Strategy
         fields = ['id', 'name']
+
+
+
+class StrategyCondition(serializers.ModelSerializer):
+    class Meta:
+        model = StrategyCondition
+        exclude = ['id', 'strategy', 'created_at', 'updated_at']
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        # Remove null fields from response
+        return {k: v for k, v in rep.items() if v is not None}
+
+
+class StrategyDetailSerializer(serializers.ModelSerializer):
+    conditions = StrategyCondition(source='strategycondition_set', many=True)
+
+    class Meta:
+        model = Strategy
+        fields = ['name', 'description', 'conditions']
