@@ -22,7 +22,7 @@ from rest_framework import generics, filters, status
 from .models import PhoneOTP, User, Wallet, Transaction, AngelOneCredential
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .utils import send_email, send_otp, create_token_for_user, response,CustomPagination, fetch_all_indices
+from .utils import send_email, send_otp, create_token_for_user, response,CustomPagination, fetch_all_indices, generate_encrypted_token
 from .utility import start_strategy, stop_strategy, connect_account, get_tokens, trade_details, get_index_expiry, get_index_strike_price
 from .middlewares import HasActiveSubscription, IsVerified, HasConnectedAngelOneAccount
 # your_app/views.py
@@ -349,7 +349,8 @@ class get_trade_details(APIView):
 
     def get(self, request, *args, **kwargs):
         try:
-            data = trade_details()
+
+            data = trade_details(request.user.id, request.user.email)
             return Response(response(True, data, "Data retrieved successfully"), status=status.HTTP_200_OK)
         except Exception as e:
             print("Error---->", str(e))

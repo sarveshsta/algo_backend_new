@@ -86,10 +86,12 @@ def get_index_strike_price(index, expiry):
 
 
 
-def trade_details():
+def trade_details(user_id, email):
     try:
         url = f"{settings.FASTAPI_BASE_URL}/tokens/trades_details/"
-        response = requests.get(url=url)
+        token = generate_encrypted_token(user_id,email)
+        headers = {"Authorization": token}
+        response = requests.get(url=url, headers=headers)
         return response.json()
     except Exception as e:
         raise Exception(f"error-- {str(e)}")
