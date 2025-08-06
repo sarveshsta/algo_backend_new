@@ -149,4 +149,4 @@ class StrategyDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Strategy
-        fields = ['name', 'description', 'conditions']
+        fields = ['id', 'name', 'description', 'conditions']
