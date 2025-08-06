@@ -133,7 +133,7 @@ class StrategyDropdownSerializer(serializers.ModelSerializer):
 
 
 
-class StrategyCondition(serializers.ModelSerializer):
+class StrategyNestedCondition(serializers.ModelSerializer):
     class Meta:
         model = StrategyCondition
         exclude = ['id', 'strategy', 'created_at', 'updated_at']
@@ -145,7 +145,7 @@ class StrategyCondition(serializers.ModelSerializer):
 
 
 class StrategyDetailSerializer(serializers.ModelSerializer):
-    conditions = StrategyCondition(source='strategycondition_set', many=True)
+    conditions = StrategyNestedCondition(source='strategycondition_set', many=True)
 
     class Meta:
         model = Strategy

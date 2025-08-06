@@ -113,3 +113,28 @@ class StrategyCondition(models.Model):
         return f"{self.type} - {self.comparison_type}"
 
 
+
+class Trade(models.Model):
+    TRADE_TYPE_CHOICES = [
+        ('BUY', 'Buy'),
+        ('SELL', 'Sell'),
+    ]
+
+
+    ORDER_TYPE_CHOICES = [
+        ('NRML', 'NRML'),
+        ('MIS', 'MIS'),
+    ]
+    user =models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    strategy = models.ForeignKey('Strategy', on_delete=models.CASCADE, null=True)
+    symbol = models.CharField(max_length=100) 
+    quantity = models.IntegerField()
+    trade_type = models.CharField(max_length=4, choices=TRADE_TYPE_CHOICES)
+    average_price = models.FloatField(null=True, blank=True)
+    ltp = models.FloatField()
+    pnl = models.FloatField()
+    order_type = models.CharField(max_length=4, choices=ORDER_TYPE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.symbol} - {self.trade_type}"
