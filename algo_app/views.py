@@ -23,7 +23,7 @@ from .models import PhoneOTP, User, Wallet, Transaction, AngelOneCredential
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .utils import send_email, send_otp, create_token_for_user, response,CustomPagination, fetch_all_indices, generate_encrypted_token
-from .utility import start_strategy, stop_strategy, connect_account, get_tokens, trade_details, get_index_expiry, get_index_strike_price
+from .utility import start_strategy, stop_strategy, connect_account, get_tokens, trade_details, get_index_expiry, get_index_strike_price, trade_detail
 from .middlewares import HasActiveSubscription, IsVerified, HasConnectedAngelOneAccount
 # your_app/views.py
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -462,3 +462,16 @@ class NSEIndicesAPIView(APIView):
                 {"success": False, "error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class get_trades(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+
+            data = trade_detail(request.user.id, request.user.email)
+            return Response(response(True, data, "Data retrieved successfully"), status=status.HTTP_200_OK)
+        except Exception as e:
+            print("Error---->", str(e))
+            return Response(response(False, message="Something went wrong", error=str(e)),status=status.HTTP_500_INTERNAL_SERVER_ERROR)
