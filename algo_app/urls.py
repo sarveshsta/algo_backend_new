@@ -22,7 +22,8 @@ from .views import (
     Register,
     VerifyPhoneOTP,CheckAngelOneConnectionAPIView,
     CustomTokenObtainPairView,
-    NSEIndicesAPIView
+    NSEIndicesAPIView,
+    get_trades,
 
 )
 
@@ -58,5 +59,6 @@ urlpatterns = [
     path("users/update-status/<str:id>/", UpdateUserStatusAPIView.as_view(), name="update-user-status"),
     path('user/angelone-connection/', CheckAngelOneConnectionAPIView.as_view(), name='check-angelone-connection'),
     path('nse-indices/', NSEIndicesAPIView.as_view(), name='nse-indices'),
+    path('trades/', get_trades.as_view(), name='get_trade_details'),
 ]
 

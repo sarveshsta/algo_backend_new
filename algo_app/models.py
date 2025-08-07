@@ -69,6 +69,7 @@ class PhoneOTP(Timestamps):
 
 
 class Wallet(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
@@ -188,14 +189,11 @@ class TradeDetails(models.Model):
     signal = models.CharField(max_length=255)
     price = models.FloatField()
     trade_time = models.DateTimeField(default=timezone.now)
-
-    token = models.ForeignKey(
-        Token,
-        verbose_name='Trade Details',
-        blank=True,
-        related_name='trade_details',  
-        on_delete=models.CASCADE
-    )
+    quantity = models.IntegerField(null=True)
+    name = models.CharField(max_length=255, null=True)
+    symbol = models.CharField(max_length=255, null=True)
+    strike_price = models.FloatField(null=True)
+    
 
     def __str__(self):
-        return f"Trade {self.id} - User {self.user_id} - Token {self.token.token}"
+        return f"Trade {self.id} - User {self.user_id} - Symbol {self.symbol}"
