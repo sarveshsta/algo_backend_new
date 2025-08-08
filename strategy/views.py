@@ -164,7 +164,7 @@ class StrategyStatusAPIView(APIView):
         response = strategy_status(self.kwargs['strategy_id'])
         return Response(response, status=status.HTTP_200_OK)
 class ListActiveStrategiesByAdminAPIView(generics.ListAPIView):
-    queryset = Strategy.objects.filter(is_active=True, is_deleted = False, created_by__is_staff=True).order_by('-created_at')
+    queryset = Strategy.objects.filter(is_deleted = False, created_by__is_staff=True).order_by('-created_at')
     serializer_class = StrategySerializer
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated]
