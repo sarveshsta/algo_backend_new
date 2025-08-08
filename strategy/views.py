@@ -266,3 +266,30 @@ class UpdateStrategyByIdAPIView(APIView):
             return Response(response(False, {}, "Strategy not found"), status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response(response(False, {}, str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class SetStrategyActiveStatusAPIView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            strategy_id = request.data.get("strategy_id")
+            is_active = request.data.get("is_active")
+
+            if strategy_id is None:
+                return Response(response(False, message="`strategy_id` is required."), status=status.HTTP_400_BAD_REQUEST)
+
+            if is_active is None:
+                return Response(response(False, message="`is_active` (true/false) is required."), status=status.HTTP_400_BAD_REQUEST)
+
+            strategy = Strategy.objects.filter(id=strategy_id).first()
+            if not strategy:
+                return Response(response(False, message="Strategy not found."), status=status.HTTP_404_NOT_FOUND)
+
+            strategy.is_active = is_active
+            strategy.save()
+            return Response(response(True, message=f"Strategy set to {'active' if is_active else 'inactive'}."), status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print("Error ---->", str(e))
+            return Response(response(False, error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
