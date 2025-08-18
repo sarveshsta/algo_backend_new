@@ -105,3 +105,13 @@ def trade_detail(user_id, email):
         return response.json()
     except Exception as e:
         raise Exception(f"error-- {str(e)}")
+    
+def get_strategy(user_id, email):
+    try:
+        url = f"{settings.FASTAPI_BASE_URL}/tokens/get_strategy_payload/"
+        token = generate_encrypted_token(user_id,email)
+        headers = {"Authorization": token}
+        response = requests.get(url=url, headers=headers)
+        return response.json()
+    except Exception as e:
+        raise Exception(f"error-- {str(e)}")

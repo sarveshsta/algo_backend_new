@@ -1,8 +1,7 @@
+from operator import index
 import uuid
 from django.db import models
 from algo_app.models import User
-
-
 
 class Strategy(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -16,7 +15,6 @@ class Strategy(models.Model):
 
     def __str__(self):
         return self.name
-
 class StrategyCondition(models.Model):
 
 
@@ -111,9 +109,6 @@ class StrategyCondition(models.Model):
 
     def __str__(self):
         return f"{self.type} - {self.comparison_type}"
-
-
-
 class Trade(models.Model):
     TRADE_TYPE_CHOICES = [
         ('BUY', 'Buy'),
@@ -139,3 +134,22 @@ class Trade(models.Model):
 
     def __str__(self):
         return f"{self.symbol} - {self.trade_type}"
+    
+
+class StrategyPayload(models.Model):
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    strategy = models.ForeignKey('Strategy', on_delete=models.CASCADE, null=True)
+    index = models.CharField(max_length=50)  # e.g., "NIFTY"
+    expiry = models.CharField(max_length=20)  # e.g., "14AUG25"
+    strike_price = models.DecimalField(max_digits=10, decimal_places=2)
+    option_type = models.CharField(max_length=20)
+    quantity = models.PositiveIntegerField()
+    trade_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    target_profit = models.DecimalField(max_digits=12, decimal_places=2)
+    candle_duration = models.CharField(max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.index} {self.option_type} {self.strike_price}"
