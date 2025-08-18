@@ -9,7 +9,8 @@ from .views import (
    DeleteStrategyAPIView,
    GetStrategyByIdAPIView,
    UpdateStrategyByIdAPIView,
-   SetStrategyActiveStatusAPIView
+   SetStrategyActiveStatusAPIView,
+   get_strategy_payload
    
 )
 
@@ -23,5 +24,6 @@ urlpatterns = [
     path("delete-strategy/", DeleteStrategyAPIView.as_view(), name="delete_strategy"),
     path("get-strategy/<str:strategy_id>/", GetStrategyByIdAPIView.as_view(), name="get_strategy"),
     path("update-strategy/<str:strategy_id>/", UpdateStrategyByIdAPIView.as_view(), name="update_strategy"),
-    path('set-status/', SetStrategyActiveStatusAPIView.as_view(), name='set-strategy-status')
+    path('set-status/', SetStrategyActiveStatusAPIView.as_view(), name='set-strategy-status'),
+    path('get_strategy_payload/', get_strategy_payload.as_view(), name='set-strategy-status')
 ]

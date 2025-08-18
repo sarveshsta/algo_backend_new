@@ -16,7 +16,7 @@ from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from algo_app.utils import CustomPagination, generate_encrypted_token
 from algo_app.middlewares import IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount
-from algo_app.utility import stop_strategy, strategy_status
+from algo_app.utility import stop_strategy, strategy_status, get_strategy
 
 
 
@@ -154,6 +154,7 @@ class StopStrategyAPIView(APIView):
         response = stop_strategy(self.kwargs['strategy_id'])
         return Response(response, status=status.HTTP_200_OK)
 
+
 class StrategyStatusAPIView(APIView):
     permission_classes = [IsAuthenticated, IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount]
     # permission_classes = [IsAuthenticated]
@@ -163,6 +164,8 @@ class StrategyStatusAPIView(APIView):
             return Response("strategy_id is required", status_code=status.HTTP_400_BAD_REQUEST)
         response = strategy_status(self.kwargs['strategy_id'])
         return Response(response, status=status.HTTP_200_OK)
+    
+
 class ListActiveStrategiesByAdminAPIView(generics.ListAPIView):
     queryset = Strategy.objects.filter(is_deleted = False, created_by__is_staff=True).order_by('-created_at')
     serializer_class = StrategySerializer
@@ -185,7 +188,6 @@ class ListActiveStrategiesByAdminAPIView(generics.ListAPIView):
             print("Error---->", str(e))
             return Response(response(error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
 
 class ListStrategiesForDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -293,3 +295,16 @@ class SetStrategyActiveStatusAPIView(APIView):
         except Exception as e:
             print("Error ---->", str(e))
             return Response(response(False, error=str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class get_strategy_payload(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+
+            data = get_strategy(request.user.id, request.user.email)
+            return Response(response(True, data, "Data retrieved successfully"), status=status.HTTP_200_OK)
+        except Exception as e:
+            print("Error---->", str(e))
+            return Response(response(False, message="Something went wrong", error=str(e)),status=status.HTTP_500_INTERNAL_SERVER_ERROR)
