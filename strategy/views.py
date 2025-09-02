@@ -132,11 +132,13 @@ class StartStrategyAPIView(APIView):
             token = generate_encrypted_token(request.user.id, request.user.email)
             headers = {"Authorization": token}
             fastapi_response = requests.post(FASTAPI_URL, json=payload, headers=headers)
-
+            print(fastapi_response, "response")
+            res = fastapi_response.json()
+            print(res, "res")
             if fastapi_response.status_code == 200:
-                return Response(response(True, fastapi_response.json(), "Strategy execution started"), status=200)
+                return Response(response(res.get('success'), message=res.get('message')), status=200)
             else:
-                return Response(response(False, message="FastAPI error", error=fastapi_response.text), status=500)
+                return Response(response(res.get('success'), message=res.get('message'), error="FastAPI error"), status=500)
 
         except Strategy.DoesNotExist:
             return Response(response(False, message="Strategy not found"), status=404)
