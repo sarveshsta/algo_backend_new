@@ -150,10 +150,11 @@ class StartStrategyAPIView(APIView):
 class StopStrategyAPIView(APIView):
     permission_classes = [IsAuthenticated, IsVerified, HasActiveSubscription, HasConnectedAngelOneAccount]
     # permission_classes = [IsAuthenticated]
-    def post(self, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         if not self.kwargs['strategy_id']:
             return Response("strategy_id is required", status_code=status.HTTP_400_BAD_REQUEST)
-        response = stop_strategy(self.kwargs['strategy_id'])
+        
+        response = stop_strategy(self.kwargs['strategy_id'], request.user.id, request.user.email)
         return Response(response, status=status.HTTP_200_OK)
 
 

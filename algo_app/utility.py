@@ -15,9 +15,11 @@ def start_strategy(data):
             raise Exception(f"error-- {str(e)}")
 
 
-def stop_strategy(strategy_id):
+def stop_strategy(strategy_id, user_id, email):
+    token = generate_encrypted_token(user_id, email)
+    headers = {"Authorization": token}
     url = f"{settings.FASTAPI_BASE_URL}{fastapi_routes.STOP_STRATEGY}?strategy_id={strategy_id}"
-    response = requests.post(url=url)
+    response = requests.post(url=url, headers=headers)
     return response.json()
 
 def strategy_status(strategy_id):
